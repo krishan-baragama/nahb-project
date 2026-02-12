@@ -21,7 +21,8 @@ def create_app(config_class=Config):
     db.init_app(app)
     
     # Ensure instance folder exists
-    os.makedirs(app.instance_path, exist_ok=True)
+    instance_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'instance')
+    os.makedirs(instance_path, exist_ok=True)
     
     # Create database tables
     with app.app_context():
