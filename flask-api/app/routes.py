@@ -1,9 +1,20 @@
 """
-Level 10 Routes - All endpoints for story management
+Flask Routes - All levels (10, 13, 16)
 """
-from flask import request, jsonify
+from flask import request, jsonify, current_app
 from app import db
 from app.models import Story, Page, Choice
+
+
+def require_api_key(f):
+    """Decorator for protected endpoints (Level 16)"""
+    def decorated(*args, **kwargs):
+        api_key = request.headers.get('X-API-KEY')
+        if api_key != current_app.config['API_KEY']:
+            return jsonify({'error': 'Unauthorized - Invalid or missing API key'}), 401
+        return f(*args, **kwargs)
+    decorated.__name__ = f.__name__
+    return decorated
 
 
 def init_routes(app):
@@ -11,11 +22,11 @@ def init_routes(app):
     @app.route('/', methods=['GET'])
     def index():
         return jsonify({
-            'message': 'NAHB API - Level 10',
+            'message': 'NAHB API - Levels 10-16',
             'version': '1.0'
         })
 
-    # ========== READING ENDPOINTS ==========
+    # ========== PUBLIC READING ENDPOINTS ==========
     
     @app.route('/stories', methods=['GET'])
     def get_stories():
@@ -47,9 +58,10 @@ def init_routes(app):
         page = Page.query.get_or_404(page_id)
         return jsonify(page.to_dict())
 
-    # ========== WRITING ENDPOINTS ==========
+    # ========== PROTECTED WRITING ENDPOINTS (Level 16) ==========
 
     @app.route('/stories', methods=['POST'])
+    @require_api_key
     def create_story():
         data = request.json
         if not data.get('title'):
@@ -58,13 +70,15 @@ def init_routes(app):
         story = Story(
             title=data.get('title'),
             description=data.get('description', ''),
-            status=data.get('status', 'draft')
+            status=data.get('status', 'draft'),
+            author_id=data.get('author_id')  # Level 16
         )
         db.session.add(story)
         db.session.commit()
         return jsonify(story.to_dict()), 201
 
     @app.route('/stories/<int:story_id>', methods=['PUT'])
+    @require_api_key
     def update_story(story_id):
         story = Story.query.get_or_404(story_id)
         data = request.json
@@ -73,6 +87,8 @@ def init_routes(app):
             story.title = data['title']
         if 'description' in data:
             story.description = data['description']
+        if 'status' in data:
+            story.status = data['status']
         if 'start_page_id' in data:
             story.start_page_id = data['start_page_id']
         
@@ -80,6 +96,7 @@ def init_routes(app):
         return jsonify(story.to_dict())
 
     @app.route('/stories/<int:story_id>', methods=['DELETE'])
+    @require_api_key
     def delete_story(story_id):
         story = Story.query.get_or_404(story_id)
         Page.query.filter_by(story_id=story_id).delete()
@@ -88,6 +105,7 @@ def init_routes(app):
         return jsonify({'message': 'Deleted'}), 200
 
     @app.route('/stories/<int:story_id>/pages', methods=['POST'])
+    @require_api_key
     def create_page(story_id):
         story = Story.query.get_or_404(story_id)
         data = request.json
@@ -99,7 +117,7 @@ def init_routes(app):
             story_id=story_id,
             text=data.get('text'),
             is_ending=data.get('is_ending', False),
-            ending_label=data.get('ending_label')
+            ending_label=data.get('ending_label')  # Level 13
         )
         db.session.add(page)
         db.session.commit()
@@ -111,6 +129,7 @@ def init_routes(app):
         return jsonify(page.to_dict()), 201
 
     @app.route('/pages/<int:page_id>/choices', methods=['POST'])
+    @require_api_key
     def create_choice(page_id):
         page = Page.query.get_or_404(page_id)
         data = request.json
@@ -137,3 +156,8 @@ def init_routes(app):
     @app.errorhandler(404)
     def not_found(error):
         return jsonify({'error': 'Not found'}), 404
+
+    @app.errorhandler(500)
+    def internal_error(error):
+        db.session.rollback()
+        return jsonify({'error': 'Internal server error'}), 500
