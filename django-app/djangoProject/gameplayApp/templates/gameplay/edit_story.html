@@ -9,7 +9,25 @@
     <div class="card">
         <h3>📖 Story Info</h3>
         <p><strong>Title:</strong> {{ story.title }}</p>
+        <p><strong>Status:</strong> 
+            <span style="color: {% if story.status == 'published' %}green{% else %}orange{% endif %};">
+                {{ story.status|upper }}
+            </span>
+        </p>
         <p><strong>Start Page:</strong> {% if story.start_page_id %}#{{ story.start_page_id }}{% else %}Not set{% endif %}</p>
+        
+        <!-- Publish/Unpublish Button -->
+        <form method="POST" style="margin-top: 15px;">
+            {% csrf_token %}
+            <button type="submit" name="publish" class="btn" 
+                    style="background: {% if story.status == 'published' %}orange{% else %}green{% endif %};">
+                {% if story.status == 'published' %}
+                    📦 Unpublish (Make Draft)
+                {% else %}
+                    ✅ Publish Story
+                {% endif %}
+            </button>
+        </form>
     </div>
     
     <div class="card">
@@ -18,9 +36,19 @@
             {% csrf_token %}
             <textarea name="text" required placeholder="Page text..."></textarea>
             <label>
-                <input type="checkbox" name="is_ending"> Ending page
+                <input type="checkbox" name="is_ending" id="is_ending"> Ending page
             </label>
+            <div id="ending_label_field" style="display: none;">
+                <input type="text" name="ending_label" placeholder="e.g., Happy Ending, Bad Ending">
+            </div>
             <button type="submit" class="btn">Create Page</button>
+
+            <script>
+            document.getElementById('is_ending').addEventListener('change', function() {
+                document.getElementById('ending_label_field').style.display = 
+                    this.checked ? 'block' : 'none';
+            });
+            </script>
         </form>
     </div>
 </div>
@@ -35,7 +63,7 @@
             <p>{{ page.text|truncatewords:15 }}</p>
             
             {% if page.is_ending %}
-                <p style="color: #155724;"><strong>🏁 Ending</strong></p>
+                <p style="color: #155724;"><strong>🏁 {{ page.ending_label|default:"Ending" }}</strong></p>
             {% else %}
                 <p><strong>Choices ({{ page.choices|length }}):</strong></p>
                 <ul style="font-size: 0.9em;">
