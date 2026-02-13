@@ -58,7 +58,7 @@ def init_routes(app):
         story = Story(
             title=data.get('title'),
             description=data.get('description', ''),
-            status='published'
+            status=data.get('status', 'draft')
         )
         db.session.add(story)
         db.session.commit()
@@ -98,7 +98,8 @@ def init_routes(app):
         page = Page(
             story_id=story_id,
             text=data.get('text'),
-            is_ending=data.get('is_ending', False)
+            is_ending=data.get('is_ending', False),
+            ending_label=data.get('ending_label')
         )
         db.session.add(page)
         db.session.commit()
