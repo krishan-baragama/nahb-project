@@ -12,7 +12,7 @@
         
         {% if page.is_ending %}
             <div style="background: #d4edda; padding: 20px; border-radius: 5px; margin-bottom: 20px;">
-                <h3 style="color: #155724;">🎉 The End</h3>
+                <h3 style="color: #155724;">🎉 {{ page.ending_label|default:"The End" }}</h3>
             </div>
             <a href="{% url 'story_list' %}" class="btn">📖 Back to Stories</a>
             <a href="{% url 'play_story' story_id %}" class="btn">🔄 Play Again</a>
