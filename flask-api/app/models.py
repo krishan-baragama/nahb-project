@@ -35,6 +35,7 @@ class Page(db.Model):
     story_id = db.Column(db.Integer, db.ForeignKey('stories.id'), nullable=False)
     text = db.Column(db.Text, nullable=False)
     is_ending = db.Column(db.Boolean, default=False)
+    ending_label = db.Column(db.String(100), nullable=True)  # Level 13
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     choices = db.relationship('Choice', foreign_keys='Choice.page_id', backref='page', lazy=True, cascade='all, delete-orphan')
@@ -44,7 +45,8 @@ class Page(db.Model):
             'id': self.id,
             'story_id': self.story_id,
             'text': self.text,
-            'is_ending': self.is_ending
+            'is_ending': self.is_ending,
+            'ending_label': self.ending_label
         }
         if include_choices:
             result['choices'] = [c.to_dict() for c in self.choices]
