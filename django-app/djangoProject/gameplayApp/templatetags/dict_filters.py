@@ -4,8 +4,9 @@ register = template.Library()
 
 @register.filter
 def lookup(dictionary, key):
-    """Get dictionary value by key"""
-    return dictionary.get(key)
+    if isinstance(dictionary, dict):
+        return dictionary.get(key)
+    return None
 
 @register.filter
 def items(dictionary):
@@ -13,3 +14,4 @@ def items(dictionary):
     if dictionary:
         return dictionary.items()
     return []
+
