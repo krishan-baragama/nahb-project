@@ -37,7 +37,7 @@
             {% for ending_id, stats in ending_distribution|lookup:story_id.items %}
             <div style="margin-bottom: 10px;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                    <span>Ending #{{ ending_id }}</span>
+                    <span>{{ stats.label }}</span>
                     <span>{{ stats.count }} times ({{ stats.percentage }}%)</span>
                 </div>
                 <div style="background: #e9ecef; height: 20px; border-radius: 10px;">
