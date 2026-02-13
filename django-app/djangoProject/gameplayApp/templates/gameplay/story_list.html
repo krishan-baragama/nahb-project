@@ -1,7 +1,27 @@
 {% extends 'gameplay/base.html' %}
+
 {% block title %}Stories - NAHB{% endblock %}
+
 {% block content %}
 <h2>📖 Available Stories</h2>
+
+<!-- Search Form -->
+<div class="card" style="margin-bottom: 20px;">
+    <form method="GET" action="{% url 'story_list' %}">
+        <div style="display: flex; gap: 10px;">
+            <input type="text" 
+                   name="search" 
+                   placeholder="Search stories..." 
+                   value="{{ search_query }}"
+                   style="flex: 1;">
+            <button type="submit" class="btn">🔍 Search</button>
+            {% if search_query %}
+            <a href="{% url 'story_list' %}" class="btn" style="background: #6c757d;">Clear</a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
 {% if stories %}
     {% for story in stories %}
     <div class="card">
@@ -14,7 +34,8 @@
     {% endfor %}
 {% else %}
     <div class="card" style="text-align: center;">
-        <p>No stories yet. <a href="{% url 'create_story' %}">Create one!</a></p>
+        <p>{% if search_query %}No stories found for "{{ search_query }}".{% else %}No stories yet.{% endif %}</p>
+        <a href="{% url 'create_story' %}" class="btn">Create First Story</a>
     </div>
 {% endif %}
 {% endblock %}
