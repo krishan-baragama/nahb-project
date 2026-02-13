@@ -1,7 +1,6 @@
 {% extends 'gameplay/base.html' %}
 {% load dict_filters %}
 
-
 {% block title %}Statistics - NAHB{% endblock %}
 
 {% block content %}
@@ -34,17 +33,19 @@
         {% if story_id in ending_distribution %}
         <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd;">
             <h4>🏁 Ending Distribution:</h4>
-            {% for ending_id, stats in ending_distribution|lookup:story_id.items %}
-            <div style="margin-bottom: 10px;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                    <span>{{ stats.label }}</span>
-                    <span>{{ stats.count }} times ({{ stats.percentage }}%)</span>
+            {% with endings=ending_distribution|lookup:story_id %}
+                {% for ending_id, stats in endings.items %}
+                <div style="margin-bottom: 10px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span>{{ stats.label }}</span>
+                        <span>{{ stats.count }} times ({{ stats.percentage }}%)</span>
+                    </div>
+                    <div style="background: #e9ecef; height: 20px; border-radius: 10px;">
+                        <div style="background: #667eea; height: 100%; width: {{ stats.percentage }}%; border-radius: 10px;"></div>
+                    </div>
                 </div>
-                <div style="background: #e9ecef; height: 20px; border-radius: 10px;">
-                    <div style="background: #667eea; height: 100%; width: {{ stats.percentage }}%; border-radius: 10px;"></div>
-                </div>
-            </div>
-            {% endfor %}
+                {% endfor %}
+            {% endwith %}
         </div>
         {% endif %}
     </div>
