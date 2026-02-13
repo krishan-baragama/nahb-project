@@ -1,0 +1,74 @@
+{% extends 'gameplay/base.html' %}
+
+{% block title %}Edit Story - NAHB{% endblock %}
+
+{% block content %}
+<h2>✏️ Edit: {{ story.title }}</h2>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+    <div class="card">
+        <h3>📖 Story Info</h3>
+        <p><strong>Title:</strong> {{ story.title }}</p>
+        <p><strong>Start Page:</strong> {% if story.start_page_id %}#{{ story.start_page_id }}{% else %}Not set{% endif %}</p>
+    </div>
+    
+    <div class="card">
+        <h3>➕ Add Page</h3>
+        <form method="POST" action="{% url 'create_page' story.id %}">
+            {% csrf_token %}
+            <textarea name="text" required placeholder="Page text..."></textarea>
+            <label>
+                <input type="checkbox" name="is_ending"> Ending page
+            </label>
+            <button type="submit" class="btn">Create Page</button>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <h3>📄 Pages ({{ pages|length }})</h3>
+    {% if pages %}
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
+        {% for page in pages %}
+        <div class="card" style="background: {% if page.is_ending %}#d4edda{% else %}#f8f9fa{% endif %};">
+            <h4>Page #{{ page.id }} {% if page.id == story.start_page_id %}⭐{% endif %}</h4>
+            <p>{{ page.text|truncatewords:15 }}</p>
+            
+            {% if page.is_ending %}
+                <p style="color: #155724;"><strong>🏁 Ending</strong></p>
+            {% else %}
+                <p><strong>Choices ({{ page.choices|length }}):</strong></p>
+                <ul style="font-size: 0.9em;">
+                    {% for choice in page.choices %}
+                    <li>{{ choice.text|truncatewords:5 }} → #{{ choice.next_page_id }}</li>
+                    {% empty %}
+                    <li style="color: #dc3545;">No choices!</li>
+                    {% endfor %}
+                </ul>
+                
+                <form method="POST" action="{% url 'create_choice' page.id %}" style="margin-top: 10px;">
+                    {% csrf_token %}
+                    <input type="text" name="text" placeholder="Choice text" required>
+                    <select name="next_page_id" required>
+                        <option value="">-- Next page --</option>
+                        {% for p in pages %}
+                        <option value="{{ p.id }}">Page #{{ p.id }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="btn" style="padding: 5px 10px;">Add Choice</button>
+                </form>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p>No pages yet.</p>
+    {% endif %}
+</div>
+
+<div style="text-align: center; margin-top: 20px;">
+    <a href="{% url 'story_list' %}" class="btn" style="background: #6c757d;">← Back</a>
+    {% if story.start_page_id %}
+    <a href="{% url 'play_story' story.id %}" class="btn">▶️ Test Play</a>
+    {% endif %}
+</div>
