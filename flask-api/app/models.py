@@ -37,7 +37,7 @@ class Page(db.Model):
     is_ending = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    choices = db.relationship('Choice', backref='page', lazy=True, cascade='all, delete-orphan')
+    choices = db.relationship('Choice', foreign_keys='Choice.page_id', backref='page', lazy=True, cascade='all, delete-orphan')
     
     def to_dict(self, include_choices=True):
         result = {

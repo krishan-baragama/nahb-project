@@ -25,6 +25,9 @@ def create_app(config_class=Config):
     
     db.init_app(app)
     
+    # Import models BEFORE creating tables
+    from app import models
+    
     with app.app_context():
         db.create_all()
         print("✅ Database initialized")
