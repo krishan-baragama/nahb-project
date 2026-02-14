@@ -2,6 +2,11 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    # Authentication (Level 16)
+    path('register/', views.register, name='register'),
+    path('login/', views.login_view, name='login'),
+    path('logout/', views.logout_view, name='logout'),
+
     # Browsing
     path('', views.story_list, name='story_list'),
     path('story/<int:story_id>/', views.story_detail, name='story_detail'),
