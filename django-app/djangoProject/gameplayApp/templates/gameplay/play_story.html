@@ -15,7 +15,7 @@
                 <h3 style="color: #155724;">🎉 {{ page.ending_label|default:"The End" }}</h3>
             </div>
             <a href="{% url 'story_list' %}" class="btn">📖 Back to Stories</a>
-            <a href="{% url 'play_story' story_id %}" class="btn">🔄 Play Again</a>
+            <a href="{% url 'play_story' story_id %}?restart=true" class="btn">🔄 Play Again</a>
         {% else %}
             <h3>Choose your path:</h3>
             <div style="margin-top: 20px;">

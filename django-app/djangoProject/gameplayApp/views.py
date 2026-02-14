@@ -57,28 +57,38 @@ def play_story(request, story_id):
     """Start or resume playing a story"""
     session_key = request.session.session_key or request.session.create()
     
-    # Check for existing session (resume)
-    try:
-        play_session = PlaySession.objects.get(
-            session_key=session_key,
-            story_id=story_id
-        )
-        # Resume from saved page
-        try:
-            response = requests.get(f'{FLASK_API}/pages/{play_session.current_page_id}', timeout=5)
-            if response.status_code == 200:
-                page_data = response.json()
-                messages.info(request, '📖 Resumed from where you left off!')
-                return render(request, 'gameplay/play_story.html', {
-                    'story_id': story_id,
-                    'page': page_data
-                })
-        except:
-            pass
-    except PlaySession.DoesNotExist:
-        pass
+    # Check if user wants to force restart
+    force_restart = request.GET.get('restart', False)
     
-    # Start from beginning
+    # Check for existing session (resume) - unless forcing restart
+    if not force_restart:
+        try:
+            play_session = PlaySession.objects.get(
+                session_key=session_key,
+                story_id=story_id
+            )
+            # Resume from saved page
+            try:
+                response = requests.get(f'{FLASK_API}/pages/{play_session.current_page_id}', timeout=5)
+                if response.status_code == 200:
+                    page_data = response.json()
+                    messages.info(request, '📖 Resumed from where you left off!')
+                    return render(request, 'gameplay/play_story.html', {
+                        'story_id': story_id,
+                        'page': page_data
+                    })
+            except:
+                pass
+        except PlaySession.DoesNotExist:
+            pass
+    
+    # Start from beginning (or restart)
+    # Delete any existing session for this story first
+    PlaySession.objects.filter(
+        session_key=session_key,
+        story_id=story_id
+    ).delete()
+    
     try:
         response = requests.get(f'{FLASK_API}/stories/{story_id}/start', timeout=5)
         if response.status_code == 200:
@@ -105,43 +115,71 @@ def play_story(request, story_id):
 
 def get_page(request, page_id):
     """Get next page with auto-save"""
-    session_key = request.session.session_key or request.session.create()
+    # Ensure we have a session key
+    if not request.session.session_key:
+        request.session.create()
+    session_key = request.session.session_key
     
     try:
+        # Fetch the page from Flask API
         response = requests.get(f'{FLASK_API}/pages/{page_id}', timeout=5)
-        page_data = response.json() if response.status_code == 200 else None
         
-        if page_data:
-            # Update session with current page
-            PlaySession.objects.update_or_create(
-                session_key=session_key,
+        if response.status_code == 404:
+            messages.error(request, 'Page not found')
+            return redirect('story_list')
+        elif response.status_code != 200:
+            messages.error(request, f'Failed to load page (Error {response.status_code})')
+            return redirect('story_list')
+        
+        page_data = response.json()
+        
+        if not page_data or 'story_id' not in page_data:
+            messages.error(request, 'Invalid page data received')
+            return redirect('story_list')
+        
+        # Update session with current page
+        PlaySession.objects.update_or_create(
+            session_key=session_key,
+            story_id=page_data['story_id'],
+            defaults={'current_page_id': page_id}
+        )
+        
+        # If ending reached, save Play record and delete session
+        if page_data.get('is_ending'):
+            Play.objects.create(
                 story_id=page_data['story_id'],
-                defaults={'current_page_id': page_id}
+                ending_page_id=page_id,
+                user=request.user if request.user.is_authenticated else None
             )
             
-            # If ending reached, save Play record and delete session
-            if page_data.get('is_ending'):
-                Play.objects.create(
-                    story_id=page_data['story_id'],
-                    ending_page_id=page_id,
-                    user=request.user if request.user.is_authenticated else None
-                )
-                
-                # Delete the session (story completed)
-                PlaySession.objects.filter(
-                    session_key=session_key,
-                    story_id=page_data['story_id']
-                ).delete()
-                
-                ending_label = page_data.get('ending_label', 'The End')
-                messages.success(request, f'🎉 You reached: {ending_label}!')
+            # Delete the session (story completed)
+            PlaySession.objects.filter(
+                session_key=session_key,
+                story_id=page_data['story_id']
+            ).delete()
+            
+            ending_label = page_data.get('ending_label', 'The End')
+            messages.success(request, f'🎉 You reached: {ending_label}!')
         
         return render(request, 'gameplay/play_story.html', {
-            'story_id': page_data.get('story_id') if page_data else None,
+            'story_id': page_data['story_id'],
             'page': page_data
         })
-    except:
-        messages.error(request, 'Cannot load page')
+        
+    except requests.exceptions.ConnectionError:
+        messages.error(request, 'Cannot connect to Flask API - is it running on port 5000?')
+        return redirect('story_list')
+    except requests.exceptions.Timeout:
+        messages.error(request, 'Flask API timeout')
+        return redirect('story_list')
+    except requests.exceptions.RequestException as e:
+        messages.error(request, f'API request error: {str(e)}')
+        return redirect('story_list')
+    except Exception as e:
+        # Log the full error for debugging
+        import traceback
+        print(f"ERROR in get_page: {traceback.format_exc()}")
+        messages.error(request, f'Error loading page: {str(e)}')
         return redirect('story_list')
 
 

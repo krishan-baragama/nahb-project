@@ -1,16 +1,19 @@
 """
-Level 10 Models - Play tracking only
+Level 16 Models - Play tracking with user authentication
 """
 from django.db import models
+from django.contrib.auth.models import User
 
 class Play(models.Model):
     """
     Track completed game plays
     Level 10: Anonymous only (no user link)
+    Level 16: Link plays to authenticated users
     """
     story_id = models.IntegerField()
     ending_page_id = models.IntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)  # Level 16
     
     class Meta:
         ordering = ['-created_at']
