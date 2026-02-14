@@ -113,8 +113,15 @@
             <a href="{% url 'create_story' %}">✍️ Create</a>
             <a href="{% url 'statistics' %}">📊 Stats</a>
             
+            {% if user.is_staff %}
+                <a href="{% url 'admin_reports' %}" style="background: #dc3545;">🛡️ Reports</a>
+            {% endif %}
+            
             {% if user.is_authenticated %}
-                <span style="color: #667eea; padding: 10px;">👤 {{ user.username }}</span>
+                <span style="color: #667eea; padding: 10px;">
+                    👤 {{ user.username }}
+                    {% if user.is_staff %}<span style="color: #dc3545;">★ ADMIN</span>{% endif %}
+                </span>
                 <a href="{% url 'logout' %}" style="background: #dc3545;">🚪 Logout</a>
             {% else %}
                 <a href="{% url 'login' %}">🔑 Login</a>
