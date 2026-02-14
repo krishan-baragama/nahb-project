@@ -17,6 +17,7 @@ class Story(db.Model):
     
     pages = db.relationship('Page', backref='story', lazy=True, foreign_keys='Page.story_id')
     author_id = db.Column(db.Integer, nullable=True)
+    illustration = db.Column(db.String(500), nullable=True)
     
     def to_dict(self):
         return {
@@ -41,6 +42,7 @@ class Page(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     choices = db.relationship('Choice', foreign_keys='Choice.page_id', backref='page', lazy=True, cascade='all, delete-orphan')
+    illustration = db.Column(db.String(500), nullable=True)
     
     def to_dict(self, include_choices=True):
         result = {
