@@ -1,0 +1,83 @@
+{% extends 'gameplay/base.html' %}
+
+{% block title %}Admin Reports - NAHB{% endblock %}
+
+{% block content %}
+<h2>🛡️ Admin: Report Management</h2>
+
+{% if not user.is_staff %}
+<div class="card" style="background: #f8d7da; color: #721c24;">
+    <p>⛔ Admin access required</p>
+</div>
+{% else %}
+
+<div class="card" style="background: #d1ecf1; color: #0c5460;">
+    <strong>Total Reports:</strong> {{ reports.count }}
+</div>
+
+{% if reports %}
+    {% for report in reports %}
+    <div class="card" style="border-left: 4px solid {% if report.status == 'pending' %}orange{% elif report.status == 'reviewed' %}blue{% else %}green{% endif %};">
+        <div style="display: flex; justify-content: space-between; align-items: start;">
+            <div style="flex: 1;">
+                <h3>
+                    Report #{{ report.id }}
+                    <span style="background: {% if report.status == 'pending' %}orange{% elif report.status == 'reviewed' %}blue{% else %}green{% endif %}; color: white; padding: 2px 8px; border-radius: 3px; font-size: 0.7em;">
+                        {{ report.status|upper }}
+                    </span>
+                </h3>
+                
+                <p><strong>Story:</strong> 
+                    {% if report.story_id in story_details %}
+                        {{ story_details|lookup:report.story_id|lookup:'title' }}
+                    {% else %}
+                        Story #{{ report.story_id }}
+                    {% endif %}
+                    <a href="{% url 'story_detail' report.story_id %}" class="btn" style="padding: 5px 10px; font-size: 0.9em;">View Story</a>
+                </p>
+                
+                <p><strong>Reported by:</strong> {{ report.user.username }}</p>
+                <p><strong>Date:</strong> {{ report.created_at|date:"M d, Y H:i" }}</p>
+                
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0;">
+                    <strong>Reason:</strong><br>
+                    {{ report.reason }}
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin-top: 15px; display: flex; gap: 10px;">
+            <!-- Update Status Form -->
+            <form method="POST" style="display: inline;">
+                {% csrf_token %}
+                <input type="hidden" name="report_id" value="{{ report.id }}">
+                <select name="status" style="padding: 8px; border-radius: 5px;">
+                    <option value="pending" {% if report.status == 'pending' %}selected{% endif %}>Pending</option>
+                    <option value="reviewed" {% if report.status == 'reviewed' %}selected{% endif %}>Reviewed</option>
+                    <option value="resolved" {% if report.status == 'resolved' %}selected{% endif %}>Resolved</option>
+                </select>
+                <button type="submit" class="btn" style="padding: 8px 15px;">Update Status</button>
+            </form>
+            
+            <!-- Suspend Story Button -->
+            <a href="{% url 'admin_suspend_story' report.story_id %}" 
+               class="btn btn-danger" 
+               style="background: #dc3545; padding: 8px 15px;"
+               onclick="return confirm('Suspend this story?');">
+                🚫 Suspend Story
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+<div class="card" style="text-align: center;">
+    <p>✅ No reports to review</p>
+</div>
+{% endif %}
+
+{% endif %}
+
+<div style="text-align: center; margin-top: 20px;">
+    <a href="{% url 'story_list' %}" class="btn" style="background: #6c757d;">← Back to Stories</a>
+</div>
+{% endblock %}
