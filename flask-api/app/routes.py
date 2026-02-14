@@ -2,18 +2,19 @@
 Flask Routes - All levels (10, 13, 16)
 """
 from flask import request, jsonify, current_app
+from functools import wraps
 from app import db
 from app.models import Story, Page, Choice
 
 
 def require_api_key(f):
     """Decorator for protected endpoints (Level 16)"""
+    @wraps(f)
     def decorated(*args, **kwargs):
         api_key = request.headers.get('X-API-KEY')
         if api_key != current_app.config['API_KEY']:
             return jsonify({'error': 'Unauthorized - Invalid or missing API key'}), 401
         return f(*args, **kwargs)
-    decorated.__name__ = f.__name__
     return decorated
 
 
@@ -66,6 +67,9 @@ def init_routes(app):
         data = request.json
         if not data.get('title'):
             return jsonify({'error': 'Title required'}), 400
+        
+        if not data.get('author_id'):
+            return jsonify({'error': 'Author ID required'}), 400
         
         story = Story(
             title=data.get('title'),

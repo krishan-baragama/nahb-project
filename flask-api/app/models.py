@@ -25,6 +25,7 @@ class Story(db.Model):
             'description': self.description,
             'status': self.status,
             'start_page_id': self.start_page_id,
+            'author_id': self.author_id,
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
 
