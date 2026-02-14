@@ -27,6 +27,6 @@ urlpatterns = [
     # Level 18: Ratings & Reports
     path('story/<int:story_id>/rate/', views.rate_story, name='rate_story'),
     path('story/<int:story_id>/report/', views.report_story, name='report_story'),
-    path('admin/reports/', views.admin_reports, name='admin_reports'),
-    path('admin/story/<int:story_id>/suspend/', views.admin_suspend_story, name='admin_suspend_story'),
+    path('management/reports/', views.admin_reports, name='admin_reports'),
+    path('management/story/<int:story_id>/suspend/', views.admin_suspend_story, name='admin_suspend_story'),
 ]
