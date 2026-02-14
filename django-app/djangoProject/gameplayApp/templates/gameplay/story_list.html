@@ -33,7 +33,7 @@
             </div>
             <!-- Show rating if available -->
             <div style="text-align: right; margin-left: 20px;">
-                {% load templatetags.rating_filters %}
+                {% load rating_filters %}
                 {% if story.id|get_avg_rating %}
                 <div style="color: #ffc107; font-size: 1.5em;">
                     {{ story.id|get_avg_rating }}⭐
