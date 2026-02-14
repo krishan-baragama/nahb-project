@@ -1,0 +1,41 @@
+{% extends 'gameplay/base.html' %}
+{% block title %}Play Story - NAHB{% endblock %}
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto;">
+    <h2>🎮 Playing Story</h2>
+    
+    {% if page %}
+    <div class="card" style="background: #f8f9fa; padding: 30px;">
+        <div style="font-size: 1.2em; line-height: 1.8; margin-bottom: 30px;">
+            {{ page.text }}
+        </div>
+        
+        {% if page.is_ending %}
+            <div style="background: #d4edda; padding: 20px; border-radius: 5px; margin-bottom: 20px;">
+                <h3 style="color: #155724;">🎉 {{ page.ending_label|default:"The End" }}</h3>
+            </div>
+            <a href="{% url 'story_list' %}" class="btn">📖 Back to Stories</a>
+            <a href="{% url 'play_story' story_id %}?restart=true" class="btn">🔄 Play Again</a>
+        {% else %}
+            <h3>Choose your path:</h3>
+            <div style="margin-top: 20px;">
+                {% if page.choices %}
+                    {% for choice in page.choices %}
+                    <a href="{% url 'get_page' choice.next_page_id %}" 
+                       class="btn" 
+                       style="display: block; margin: 10px 0; text-align: left;">
+                        ➤ {{ choice.text }}
+                    </a>
+                    {% endfor %}
+                {% else %}
+                    <p style="color: #dc3545;">⚠️ No choices available!</p>
+                    <a href="{% url 'story_list' %}" class="btn">← Back</a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+    {% else %}
+    <p>Could not load page.</p>
+    {% endif %}
+</div>
+{% endblock %}

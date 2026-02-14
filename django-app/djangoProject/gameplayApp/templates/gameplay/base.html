@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}NAHB{% endblock %}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #667eea;
+        }
+        h1 {
+            color: #667eea;
+            font-size: 2.5em;
+        }
+        nav {
+            text-align: center;
+            margin: 20px 0;
+        }
+        nav a {
+            display: inline-block;
+            margin: 0 10px;
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        nav a:hover {
+            background: #764ba2;
+        }
+        .messages {
+            margin: 20px 0;
+        }
+        .alert {
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background: #764ba2;
+        }
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .card:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        textarea {
+            min-height: 100px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📚 NAHB</h1>
+            <p>Not Another Hero's Book</p>
+        </header>
+        
+        <nav>
+            <a href="{% url 'story_list' %}">📖 Stories</a>
+            <a href="{% url 'create_story' %}">✍️ Create</a>
+            <a href="{% url 'statistics' %}">📊 Stats</a>
+            
+            {% if user.is_staff %}
+                <a href="{% url 'admin_reports' %}" style="background: #dc3545;">🛡️ Reports</a>
+            {% endif %}
+            
+            {% if user.is_authenticated %}
+                <span style="color: #667eea; padding: 10px;">
+                    👤 {{ user.username }}
+                    {% if user.is_staff %}<span style="color: #dc3545;">★ ADMIN</span>{% endif %}
+                </span>
+                <a href="{% url 'logout' %}" style="background: #dc3545;">🚪 Logout</a>
+            {% else %}
+                <a href="{% url 'login' %}">🔑 Login</a>
+                <a href="{% url 'register' %}">📝 Register</a>
+            {% endif %}
+        </nav>
+
+        
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <main>
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</body>
+</html>

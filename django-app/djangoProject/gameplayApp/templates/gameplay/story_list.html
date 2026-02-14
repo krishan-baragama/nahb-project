@@ -1,0 +1,64 @@
+{% extends 'gameplay/base.html' %}
+
+{% block title %}Stories - NAHB{% endblock %}
+
+{% block content %}
+<h2>📖 Available Stories</h2>
+
+<!-- Search Form -->
+<div class="card" style="margin-bottom: 20px;">
+    <form method="GET" action="{% url 'story_list' %}">
+        <div style="display: flex; gap: 10px;">
+            <input type="text" 
+                   name="search" 
+                   placeholder="Search stories..." 
+                   value="{{ search_query }}"
+                   style="flex: 1;">
+            <button type="submit" class="btn">🔍 Search</button>
+            {% if search_query %}
+            <a href="{% url 'story_list' %}" class="btn" style="background: #6c757d;">Clear</a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+{% if stories %}
+    {% for story in stories %}
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: start;">
+            <div style="flex: 1;">
+                <h3>{{ story.title }}</h3>
+                <p>{{ story.description }}</p>
+                <p><small>Created: {{ story.created_at|slice:":10" }}</small></p>
+            </div>
+            <!-- Show rating if available -->
+            <div style="text-align: right; margin-left: 20px;">
+                {% load rating_filters %}
+                {% if story.id|get_avg_rating %}
+                <div style="color: #ffc107; font-size: 1.5em;">
+                    {{ story.id|get_avg_rating }}⭐
+                </div>
+                <small>{{ story.id|get_rating_count }} reviews</small>
+                {% else %}
+                <small style="color: #999;">No ratings yet</small>
+                {% endif %}
+            </div>
+        </div>
+        <div style="margin-top: 10px;">
+            <a href="{% url 'play_story' story.id %}" class="btn">▶️ Play</a>
+            <a href="{% url 'story_detail' story.id %}" class="btn" style="background: #17a2b8;">📖 Details</a>
+            {% if user.is_authenticated %}
+                {% if user.is_staff or user.id == story.author_id %}
+                    <a href="{% url 'edit_story' story.id %}" class="btn">✏️ Edit</a>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="card" style="text-align: center;">
+        <p>{% if search_query %}No stories found for "{{ search_query }}".{% else %}No stories yet.{% endif %}</p>
+        <a href="{% url 'create_story' %}" class="btn">Create First Story</a>
+    </div>
+{% endif %}
+{% endblock %}

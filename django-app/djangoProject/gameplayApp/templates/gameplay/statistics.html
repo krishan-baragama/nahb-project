@@ -1,0 +1,58 @@
+{% extends 'gameplay/base.html' %}
+{% load dict_filters %}
+
+{% block title %}Statistics - NAHB{% endblock %}
+
+{% block content %}
+<h2>📊 Gameplay Statistics</h2>
+
+<div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-align: center; padding: 40px;">
+    <h1 style="font-size: 3em; margin: 0; color: white;">{{ total_plays }}</h1>
+    <p style="font-size: 1.2em;">Total Plays</p>
+</div>
+
+{% if story_plays %}
+    {% for story_id, play_count in story_plays.items %}
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h3>
+                    {% if story_id in story_details %}
+                        {{ story_details|lookup:story_id|lookup:'title' }}
+                    {% else %}
+                        Story #{{ story_id }}
+                    {% endif %}
+                </h3>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-size: 2em; font-weight: bold; color: #667eea;">{{ play_count }}</div>
+                <div>plays</div>
+            </div>
+        </div>
+        
+        {% if story_id in ending_distribution %}
+        <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd;">
+            <h4>🏁 Ending Distribution:</h4>
+            {% with endings=ending_distribution|lookup:story_id %}
+                {% for ending_id, stats in endings.items %}
+                <div style="margin-bottom: 10px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span>{{ stats.label }}</span>
+                        <span>{{ stats.count }} times ({{ stats.percentage }}%)</span>
+                    </div>
+                    <div style="background: #e9ecef; height: 20px; border-radius: 10px;">
+                        <div style="background: #667eea; height: 100%; width: {{ stats.percentage }}%; border-radius: 10px;"></div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% endwith %}
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+{% else %}
+<div class="card" style="text-align: center;">
+    <p>No plays yet. <a href="{% url 'story_list' %}">Start playing!</a></p>
+</div>
+{% endif %}
+{% endblock %}

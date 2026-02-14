@@ -119,3 +119,8 @@ STATIC_URL = 'static/'
 
 # Flask API Configuration
 FLASK_API_URL = 'http://localhost:5000'
+FLASK_API_KEY = 'dev-api-key-12345'
+
+# Login settings
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'story_list'

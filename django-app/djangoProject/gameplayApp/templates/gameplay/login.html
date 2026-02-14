@@ -1,0 +1,27 @@
+{% extends 'gameplay/base.html' %}
+
+{% block title %}Login - NAHB{% endblock %}
+
+{% block content %}
+<div style="max-width: 500px; margin: 0 auto;">
+    <h2>🔑 Login</h2>
+    
+    <div class="card">
+        <form method="POST">
+            {% csrf_token %}
+            
+            <label><strong>Username:</strong></label>
+            <input type="text" name="username" required>
+            
+            <label><strong>Password:</strong></label>
+            <input type="password" name="password" required>
+            
+            <button type="submit" class="btn" style="width: 100%; margin-top: 10px;">Login</button>
+        </form>
+        
+        <p style="text-align: center; margin-top: 20px;">
+            Don't have an account? <a href="{% url 'register' %}">Register here</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

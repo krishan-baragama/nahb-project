@@ -1,0 +1,133 @@
+{% extends 'gameplay/base.html' %}
+
+{% block title %}{{ story.title }} - NAHB{% endblock %}
+
+{% block content %}
+{% if story %}
+<div class="card">
+    <h2>{{ story.title }}</h2>
+    
+    <!-- Average Rating Display -->
+    {% if avg_rating %}
+    <div style="background: #fff3cd; padding: 15px; border-radius: 5px; margin: 15px 0;">
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <div style="font-size: 2.5em; color: #ffc107;">
+                {{ avg_rating }}⭐
+            </div>
+            <div>
+                <strong>Average Rating</strong><br>
+                <small>{{ rating_count }} rating{{ rating_count|pluralize }}</small>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <p style="margin: 20px 0;">{{ story.description }}</p>
+    <p><small>Status: {{ story.status }}</small></p>
+    
+    <div style="margin-top: 30px;">
+        <a href="{% url 'play_story' story.id %}" class="btn">▶️ Play Story</a>
+        
+        {% if user.is_authenticated %}
+            {% if user.is_staff or user.id == story.author_id %}
+                <a href="{% url 'edit_story' story.id %}" class="btn" style="background: #6c757d;">✏️ Edit</a>
+            {% endif %}
+        {% endif %}
+        
+        <a href="{% url 'story_list' %}" class="btn" style="background: #6c757d;">← Back</a>
+    </div>
+</div>
+
+<!-- Rating Form (Level 18) -->
+{% if user.is_authenticated %}
+<div class="card">
+    <h3>⭐ Rate This Story</h3>
+    
+    {% if user_rating %}
+    <p style="background: #d4edda; padding: 10px; border-radius: 5px; color: #155724;">
+        Your current rating: {{ user_rating.rating }}⭐
+        {% if user_rating.comment %}
+        <br><em>"{{ user_rating.comment }}"</em>
+        {% endif %}
+    </p>
+    <p><small>You can update your rating below:</small></p>
+    {% endif %}
+    
+    <form method="POST" action="{% url 'rate_story' story.id %}">
+        {% csrf_token %}
+        
+        <label><strong>Rating (1-5 stars):</strong></label>
+        <div style="margin-bottom: 15px;">
+            <input type="radio" name="rating" value="5" id="r5" {% if user_rating.rating == 5 %}checked{% endif %}>
+            <label for="r5" style="display: inline; cursor: pointer;">⭐⭐⭐⭐⭐ (5 - Excellent)</label><br>
+            
+            <input type="radio" name="rating" value="4" id="r4" {% if user_rating.rating == 4 %}checked{% endif %}>
+            <label for="r4" style="display: inline; cursor: pointer;">⭐⭐⭐⭐ (4 - Good)</label><br>
+            
+            <input type="radio" name="rating" value="3" id="r3" {% if user_rating.rating == 3 %}checked{% endif %}>
+            <label for="r3" style="display: inline; cursor: pointer;">⭐⭐⭐ (3 - Average)</label><br>
+            
+            <input type="radio" name="rating" value="2" id="r2" {% if user_rating.rating == 2 %}checked{% endif %}>
+            <label for="r2" style="display: inline; cursor: pointer;">⭐⭐ (2 - Poor)</label><br>
+            
+            <input type="radio" name="rating" value="1" id="r1" {% if user_rating.rating == 1 %}checked{% endif %}>
+            <label for="r1" style="display: inline; cursor: pointer;">⭐ (1 - Terrible)</label>
+        </div>
+        
+        <label><strong>Comment (optional):</strong></label>
+        <textarea name="comment" placeholder="Share your thoughts about this story...">{% if user_rating %}{{ user_rating.comment }}{% endif %}</textarea>
+        
+        <button type="submit" class="btn">Submit Rating</button>
+    </form>
+</div>
+
+<!-- Report Form -->
+<div class="card" style="background: #fff3cd;">
+    <h3>🚩 Report This Story</h3>
+    <p><small>Report if this story contains inappropriate content</small></p>
+    
+    <form method="POST" action="{% url 'report_story' story.id %}">
+        {% csrf_token %}
+        
+        <label><strong>Reason for reporting:</strong></label>
+        <textarea name="reason" required placeholder="Describe why this story should be reviewed..."></textarea>
+        
+        <button type="submit" class="btn btn-danger" style="background: #dc3545;">Submit Report</button>
+    </form>
+</div>
+{% else %}
+<div class="card" style="background: #f8f9fa; text-align: center;">
+    <p>Please <a href="{% url 'login' %}">login</a> to rate or report this story.</p>
+</div>
+{% endif %}
+
+<!-- All Ratings & Comments -->
+{% if ratings %}
+<div class="card">
+    <h3>💬 User Reviews ({{ rating_count }})</h3>
+    
+    {% for rating in ratings %}
+    <div style="border-bottom: 1px solid #eee; padding: 15px 0;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <strong>{{ rating.user.username }}</strong>
+                <span style="color: #ffc107; font-size: 1.2em;">
+                    {% for i in "12345" %}
+                        {% if forloop.counter <= rating.rating %}⭐{% endif %}
+                    {% endfor %}
+                </span>
+            </div>
+            <small style="color: #666;">{{ rating.created_at|date:"M d, Y" }}</small>
+        </div>
+        {% if rating.comment %}
+        <p style="margin-top: 10px; color: #555;">{{ rating.comment }}</p>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% else %}
+<p>Story not found.</p>
+{% endif %}
+{% endblock %}
