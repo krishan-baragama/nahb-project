@@ -357,7 +357,8 @@ def create_page(request, story_id):
         data = {
             'text': request.POST.get('text'),
             'is_ending': request.POST.get('is_ending') == 'on',
-            'ending_label': request.POST.get('ending_label', '')  # Level 13
+            'ending_label': request.POST.get('ending_label', ''),  # Level 13
+            'illustration': request.POST.get('illustration', '')
         }
         try:
             response = requests.post(
