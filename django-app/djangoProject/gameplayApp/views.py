@@ -291,10 +291,24 @@ def create_story(request):
 
 def edit_story(request, story_id):
     """Edit story with publish option"""
+    # Require login
+    if not request.user.is_authenticated:
+        messages.error(request, 'Please login to edit stories')
+        return redirect('login')
+    
     try:
         # Get story
         response = requests.get(f'{FLASK_API}/stories/{story_id}', timeout=5)
         story = response.json() if response.status_code == 200 else None
+        
+        if not story:
+            messages.error(request, 'Story not found')
+            return redirect('story_list')
+        
+        # Check permissions: owner or admin
+        if not (request.user.is_staff or request.user.id == story.get('author_id')):
+            messages.error(request, '⛔ You can only edit your own stories')
+            return redirect('story_detail', story_id=story_id)
         
         # Get pages
         response = requests.get(f'{FLASK_API}/stories/{story_id}/pages', timeout=5)
@@ -324,6 +338,21 @@ def edit_story(request, story_id):
 
 def create_page(request, story_id):
     """Add page with ending label support"""
+    # Require login
+    if not request.user.is_authenticated:
+        messages.error(request, 'Please login')
+        return redirect('login')
+    
+    # Check ownership
+    try:
+        response = requests.get(f'{FLASK_API}/stories/{story_id}', timeout=5)
+        story = response.json() if response.status_code == 200 else None
+        if story and not (request.user.is_staff or request.user.id == story.get('author_id')):
+            messages.error(request, '⛔ You can only edit your own stories')
+            return redirect('story_list')
+    except:
+        pass
+    
     if request.method == 'POST':
         data = {
             'text': request.POST.get('text'),
@@ -349,6 +378,26 @@ def create_page(request, story_id):
 
 def create_choice(request, page_id):
     """Add choice to page"""
+    # Require login
+    if not request.user.is_authenticated:
+        messages.error(request, 'Please login')
+        return redirect('login')
+    
+    # Get page to check story ownership
+    try:
+        response = requests.get(f'{FLASK_API}/pages/{page_id}', timeout=5)
+        page_data = response.json() if response.status_code == 200 else None
+        
+        if page_data:
+            story_response = requests.get(f'{FLASK_API}/stories/{page_data["story_id"]}', timeout=5)
+            story = story_response.json() if story_response.status_code == 200 else None
+            
+            if story and not (request.user.is_staff or request.user.id == story.get('author_id')):
+                messages.error(request, '⛔ You can only edit your own stories')
+                return redirect('story_list')
+    except:
+        pass
+    
     if request.method == 'POST':
         data = {
             'text': request.POST.get('text'),
