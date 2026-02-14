@@ -5,7 +5,7 @@ import requests
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.conf import settings
-from .models import Play, PlaySession
+from .models import Play, PlaySession, Rating, Report
 from collections import Counter
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.models import User
@@ -40,7 +40,7 @@ def story_list(request):
 
 
 def story_detail(request, story_id):
-    """Display single story details"""
+    """Display single story details with ratings"""
     try:
         response = requests.get(f'{FLASK_API}/stories/{story_id}', timeout=5)
         story = response.json() if response.status_code == 200 else None
@@ -48,7 +48,31 @@ def story_detail(request, story_id):
         story = None
         messages.error(request, 'Cannot load story')
     
-    return render(request, 'gameplay/story_detail.html', {'story': story})
+    # Get ratings for this story
+    ratings = Rating.objects.filter(story_id=story_id)
+    
+    # Calculate average rating
+    if ratings.exists():
+        avg_rating = sum(r.rating for r in ratings) / ratings.count()
+        avg_rating = round(avg_rating, 1)
+    else:
+        avg_rating = None
+    
+    # Get current user's rating
+    user_rating = None
+    if request.user.is_authenticated:
+        try:
+            user_rating = Rating.objects.get(story_id=story_id, user=request.user)
+        except Rating.DoesNotExist:
+            pass
+    
+    return render(request, 'gameplay/story_detail.html', {
+        'story': story,
+        'ratings': ratings,
+        'avg_rating': avg_rating,
+        'rating_count': ratings.count(),
+        'user_rating': user_rating
+    })
 
 
 # ========== PLAYING VIEWS WITH AUTO-SAVE ==========
@@ -415,3 +439,126 @@ def logout_view(request):
     logout(request)
     messages.success(request, 'You have been logged out')
     return redirect('story_list')
+
+# ========== RATING & COMMENT VIEWS (Level 18) ==========
+
+@login_required
+def rate_story(request, story_id):
+    """Add or update rating for a story"""
+    if request.method == 'POST':
+        rating_value = request.POST.get('rating')
+        comment = request.POST.get('comment', '')
+        
+        if not rating_value or int(rating_value) not in range(1, 6):
+            messages.error(request, 'Please select a rating from 1 to 5 stars')
+            return redirect('story_detail', story_id=story_id)
+        
+        # Update or create rating
+        rating, created = Rating.objects.update_or_create(
+            story_id=story_id,
+            user=request.user,
+            defaults={
+                'rating': int(rating_value),
+                'comment': comment
+            }
+        )
+        
+        if created:
+            messages.success(request, '✅ Rating submitted!')
+        else:
+            messages.success(request, '✅ Rating updated!')
+        
+        return redirect('story_detail', story_id=story_id)
+    
+    return redirect('story_detail', story_id=story_id)
+
+
+@login_required
+def report_story(request, story_id):
+    """Report a story"""
+    if request.method == 'POST':
+        reason = request.POST.get('reason')
+        
+        if not reason:
+            messages.error(request, 'Please provide a reason for reporting')
+            return redirect('story_detail', story_id=story_id)
+        
+        # Check if user already reported this story
+        if Report.objects.filter(story_id=story_id, user=request.user).exists():
+            messages.warning(request, 'You have already reported this story')
+            return redirect('story_detail', story_id=story_id)
+        
+        Report.objects.create(
+            story_id=story_id,
+            user=request.user,
+            reason=reason
+        )
+        
+        messages.success(request, '✅ Report submitted. Admins will review it.')
+        return redirect('story_detail', story_id=story_id)
+    
+    return redirect('story_detail', story_id=story_id)
+
+
+@login_required
+def admin_reports(request):
+    """Admin view for managing reports"""
+    if not request.user.is_staff:
+        messages.error(request, 'Admin access required')
+        return redirect('story_list')
+    
+    # Handle status updates
+    if request.method == 'POST':
+        report_id = request.POST.get('report_id')
+        new_status = request.POST.get('status')
+        
+        if report_id and new_status:
+            try:
+                report = Report.objects.get(id=report_id)
+                report.status = new_status
+                report.save()
+                messages.success(request, f'Report #{report_id} updated to {new_status}')
+            except Report.DoesNotExist:
+                messages.error(request, 'Report not found')
+    
+    # Get all reports
+    reports = Report.objects.all()
+    
+    # Get story details for each report
+    story_details = {}
+    for report in reports:
+        try:
+            response = requests.get(f'{FLASK_API}/stories/{report.story_id}', timeout=5)
+            if response.status_code == 200:
+                story_details[report.story_id] = response.json()
+        except:
+            pass
+    
+    return render(request, 'gameplay/admin_reports.html', {
+        'reports': reports,
+        'story_details': story_details
+    })
+
+
+@login_required
+def admin_suspend_story(request, story_id):
+    """Admin: Suspend a story"""
+    if not request.user.is_staff:
+        messages.error(request, 'Admin access required')
+        return redirect('story_list')
+    
+    try:
+        response = requests.put(
+            f'{FLASK_API}/stories/{story_id}',
+            json={'status': 'suspended'},
+            headers={'X-API-KEY': settings.FLASK_API_KEY},
+            timeout=5
+        )
+        if response.status_code == 200:
+            messages.success(request, '✅ Story suspended')
+        else:
+            messages.error(request, 'Failed to suspend story')
+    except:
+        messages.error(request, 'Cannot connect to Flask API')
+    
+    return redirect('admin_reports')
