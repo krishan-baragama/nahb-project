@@ -16,6 +16,7 @@ class Story(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     pages = db.relationship('Page', backref='story', lazy=True, foreign_keys='Page.story_id')
+    author_id = db.Column(db.Integer, nullable=True)
     
     def to_dict(self):
         return {
