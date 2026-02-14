@@ -23,4 +23,10 @@ urlpatterns = [
     path('story/<int:story_id>/edit/', views.edit_story, name='edit_story'),
     path('story/<int:story_id>/page/create/', views.create_page, name='create_page'),
     path('page/<int:page_id>/choice/create/', views.create_choice, name='create_choice'),
+
+    # Level 18: Ratings & Reports
+    path('story/<int:story_id>/rate/', views.rate_story, name='rate_story'),
+    path('story/<int:story_id>/report/', views.report_story, name='report_story'),
+    path('admin/reports/', views.admin_reports, name='admin_reports'),
+    path('admin/story/<int:story_id>/suspend/', views.admin_suspend_story, name='admin_suspend_story'),
 ]
