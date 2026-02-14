@@ -7,6 +7,9 @@ from django.contrib import messages
 from django.conf import settings
 from .models import Play, PlaySession
 from collections import Counter
+from django.contrib.auth import login, logout, authenticate
+from django.contrib.auth.models import User
+from django.contrib.auth.decorators import login_required
 
 FLASK_API = settings.FLASK_API_URL
 
@@ -120,7 +123,8 @@ def get_page(request, page_id):
             if page_data.get('is_ending'):
                 Play.objects.create(
                     story_id=page_data['story_id'],
-                    ending_page_id=page_id
+                    ending_page_id=page_id,
+                    user=request.user if request.user.is_authenticated else None
                 )
                 
                 # Delete the session (story completed)
@@ -199,16 +203,18 @@ def statistics(request):
 
 # ========== CREATION VIEWS WITH DRAFT SUPPORT ==========
 
+@login_required
 def create_story(request):
     """Create new story (defaults to draft)"""
     if request.method == 'POST':
         data = {
             'title': request.POST.get('title'),
             'description': request.POST.get('description'),
-            'status': 'draft'  # Level 13: default to draft
+            'status': 'draft',  # Level 13: default to draft
+            'author_id': request.user.id
         }
         try:
-            response = requests.post(f'{FLASK_API}/stories', json=data, timeout=5)
+            response = requests.post(f'{FLASK_API}/stories', json=data, headers={'X-API-KEY': settings.FLASK_API_KEY}, timeout=5)
             if response.status_code == 201:
                 messages.success(request, '✅ Story created as draft!')
                 story = response.json()
@@ -238,6 +244,7 @@ def edit_story(request, story_id):
             response = requests.put(
                 f'{FLASK_API}/stories/{story_id}',
                 json={'status': new_status},
+                headers={'X-API-KEY': settings.FLASK_API_KEY},
                 timeout=5
             )
             if response.status_code == 200:
@@ -265,6 +272,7 @@ def create_page(request, story_id):
             response = requests.post(
                 f'{FLASK_API}/stories/{story_id}/pages',
                 json=data,
+                headers={'X-API-KEY': settings.FLASK_API_KEY},
                 timeout=5
             )
             if response.status_code == 201:
@@ -288,6 +296,7 @@ def create_choice(request, page_id):
             response = requests.post(
                 f'{FLASK_API}/pages/{page_id}/choices',
                 json=data,
+                headers={'X-API-KEY': settings.FLASK_API_KEY},
                 timeout=5
             )
             if response.status_code == 201:
@@ -305,3 +314,66 @@ def create_choice(request, page_id):
         return redirect('edit_story', story_id=page_data['story_id'])
     except:
         return redirect('story_list')
+    
+
+# ========== AUTHENTICATION VIEWS (Level 16) ==========
+
+def register(request):
+    """User registration"""
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        password2 = request.POST.get('password2')
+        role = request.POST.get('role', 'reader')
+        
+        # Validation
+        if password != password2:
+            messages.error(request, 'Passwords do not match')
+            return render(request, 'gameplay/register.html')
+        
+        if User.objects.filter(username=username).exists():
+            messages.error(request, 'Username already exists')
+            return render(request, 'gameplay/register.html')
+        
+        # Create user
+        user = User.objects.create_user(username=username, email=email, password=password)
+        
+        # Set role (using groups or is_staff)
+        if role == 'admin':
+            user.is_staff = True
+            user.is_superuser = True
+        elif role == 'author':
+            user.is_staff = False
+        
+        user.save()
+        
+        messages.success(request, f'✅ Account created! You can now login.')
+        return redirect('login')
+    
+    return render(request, 'gameplay/register.html')
+
+
+def login_view(request):
+    """User login"""
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        
+        user = authenticate(request, username=username, password=password)
+        
+        if user is not None:
+            login(request, user)
+            messages.success(request, f'Welcome back, {user.username}!')
+            return redirect('story_list')
+        else:
+            messages.error(request, 'Invalid username or password')
+    
+    return render(request, 'gameplay/login.html')
+
+
+def logout_view(request):
+    """User logout"""
+    logout(request)
+    messages.success(request, 'You have been logged out')
+    return redirect('story_list')
