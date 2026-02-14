@@ -33,6 +33,8 @@
                 <a href="{% url 'edit_story' story.id %}" class="btn" style="background: #6c757d;">✏️ Edit</a>
             {% endif %}
         {% endif %}
+        <a href="{% url 'story_tree' story.id %}" class="btn" style="background: #17a2b8;">🌳 Story Tree</a>
+        <a href="{% url 'player_path' story.id %}" class="btn" style="background: #17a2b8;">📊 Player Paths</a>
         
         <a href="{% url 'story_list' %}" class="btn" style="background: #6c757d;">← Back</a>
     </div>
