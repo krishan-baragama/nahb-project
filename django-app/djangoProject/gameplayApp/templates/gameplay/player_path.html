@@ -15,38 +15,38 @@
     <p>See which endings players reached most often</p>
 </div>
 
-{% for ending_id, data in endings.items %}
-<div class="card">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-        <h4>{{ data.label }}</h4>
-        <div style="text-align: right;">
-            <div style="font-size: 2em; color: #667eea;">{{ data.count }}</div>
-            <div>plays ({{ data.count|floatformat:0|add:"0"|mul:100|div:total_plays|floatformat:1 }}%)</div>
+{% if endings %}
+    {% for ending_id, data in endings.items %}
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h4>{{ data.label }}</h4>
+            <div style="text-align: right;">
+                <div style="font-size: 2em; color: #667eea;">{{ data.count }}</div>
+                <div>plays ({{ data.percentage }}%)</div>
+            </div>
         </div>
-    </div>
-    
-    <!-- Progress bar -->
-    <div style="background: #e9ecef; height: 30px; border-radius: 15px; overflow: hidden; margin-bottom: 15px;">
-        <div style="background: linear-gradient(90deg, #667eea, #764ba2); height: 100%; width: {% widthratio data.count total_plays 100 %}%; transition: width 0.5s;"></div>
-    </div>
-    
-    <!-- Players who reached this ending -->
-    {% if data.players %}
-    <details style="margin-top: 10px;">
-        <summary style="cursor: pointer; color: #667eea;"><strong>Players ({{ data.players|length }})</strong></summary>
-        <div style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 5px;">
-            {% for player in data.players %}
-                <span style="display: inline-block; background: #667eea; color: white; padding: 5px 10px; margin: 5px; border-radius: 15px;">
-                    👤 {{ player }}
-                </span>
-            {% endfor %}
+        
+        <!-- Progress bar -->
+        <div style="background: #e9ecef; height: 30px; border-radius: 15px; overflow: hidden; margin-bottom: 15px;">
+            <div style="background: linear-gradient(90deg, #667eea, #764ba2); height: 100%; width: {% widthratio data.count total_plays 100 %}%; transition: width 0.5s;"></div>
         </div>
-    </details>
-    {% endif %}
-</div>
-{% endfor %}
-
-{% if not endings %}
+        
+        <!-- Players who reached this ending -->
+        {% if data.players %}
+        <details style="margin-top: 10px;">
+            <summary style="cursor: pointer; color: #667eea;"><strong>Players ({{ data.players|length }})</strong></summary>
+            <div style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+                {% for player in data.players %}
+                    <span style="display: inline-block; background: #667eea; color: white; padding: 5px 10px; margin: 5px; border-radius: 15px;">
+                        👤 {{ player }}
+                    </span>
+                {% endfor %}
+            </div>
+        </details>
+        {% endif %}
+    </div>
+    {% endfor %}
+{% else %}
 <div class="card" style="text-align: center;">
     <p>No plays recorded yet. Be the first to play!</p>
     <a href="{% url 'play_story' story.id %}" class="btn">▶️ Play Now</a>
