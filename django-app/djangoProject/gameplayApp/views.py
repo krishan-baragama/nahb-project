@@ -729,3 +729,30 @@ def player_path(request, story_id):
         print(f"Error in player_path view: {e}")
         messages.error(request, f'Cannot load player paths: {str(e)}')
         return redirect('story_list')
+    
+
+
+def dice_roll(request, page_id):
+    """Random dice roll - choose random path"""
+    import random
+    
+    try:
+        response = requests.get(f'{FLASK_API}/pages/{page_id}', timeout=5)
+        page_data = response.json() if response.status_code == 200 else None
+        
+        if page_data and page_data.get('choices'):
+            # Roll dice (1-6) just for fun
+            dice_value = random.randint(1, 6)
+            
+            # Pick random choice
+            random_choice = random.choice(page_data['choices'])
+            
+            messages.success(request, f'🎲 Rolled a {dice_value}! Fate chose: "{random_choice["text"]}"')
+            
+            return redirect('get_page', page_id=random_choice['next_page_id'])
+        else:
+            messages.error(request, 'No choices available for dice roll')
+            return redirect('get_page', page_id=page_id)
+    except:
+        messages.error(request, 'Dice roll failed')
+        return redirect('story_list')
