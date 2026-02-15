@@ -33,6 +33,19 @@
                 {% endif %}
             </div>
         {% endif %}
+        <!-- Level 20: Show illustration if available -->
+        {% if page.illustration %}
+        <div style="text-align: center; margin-bottom: 20px;">
+            <img src="{{ page.illustration }}" 
+                alt="Story illustration" 
+                style="max-width: 100%; max-height: 400px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.2);"
+                onerror="this.style.display='none'">
+        </div>
+        {% endif %}
+        
+        <div style="font-size: 1.2em; line-height: 1.8; margin-bottom: 30px;">
+            {{ page.text }}
+        </div>
     </div>
     {% else %}
     <p>Could not load page.</p>

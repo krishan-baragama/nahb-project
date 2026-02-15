@@ -357,7 +357,8 @@ def create_page(request, story_id):
         data = {
             'text': request.POST.get('text'),
             'is_ending': request.POST.get('is_ending') == 'on',
-            'ending_label': request.POST.get('ending_label', '')  # Level 13
+            'ending_label': request.POST.get('ending_label', ''),  # Level 13
+            'illustration': request.POST.get('illustration', '')
         }
         try:
             response = requests.post(
@@ -611,3 +612,96 @@ def admin_suspend_story(request, story_id):
         messages.error(request, 'Cannot connect to Flask API')
     
     return redirect('admin_reports')
+
+
+# ========== VISUALIZATION VIEWS (Level 20) ==========
+
+def story_tree(request, story_id):
+    """Visualize story structure as a tree/graph"""
+    try:
+        # Get story details
+        response = requests.get(f'{FLASK_API}/stories/{story_id}', timeout=5)
+        story = response.json() if response.status_code == 200 else None
+        
+        # Get all pages
+        response = requests.get(f'{FLASK_API}/stories/{story_id}/pages', timeout=5)
+        pages = response.json() if response.status_code == 200 else []
+        
+        # Build graph data structure
+        nodes = []
+        edges = []
+        
+        for page in pages:
+            # Add node
+            node = {
+                'id': page['id'],
+                'text': page['text'][:50] + '...' if len(page['text']) > 50 else page['text'],
+                'is_ending': page['is_ending'],
+                'ending_label': page.get('ending_label', 'The End'),
+                'is_start': page['id'] == story['start_page_id'] if story else False
+            }
+            nodes.append(node)
+            
+            # Add edges (choices)
+            for choice in page.get('choices', []):
+                edge = {
+                    'from': page['id'],
+                    'to': choice['next_page_id'],
+                    'label': choice['text'][:30] + '...' if len(choice['text']) > 30 else choice['text']
+                }
+                edges.append(edge)
+        
+        return render(request, 'gameplay/story_tree.html', {
+            'story': story,
+            'nodes': nodes,
+            'edges': edges
+        })
+    except:
+        messages.error(request, 'Cannot load story tree')
+        return redirect('story_list')
+
+
+def player_path(request, story_id):
+    """Show paths taken by players through the story"""
+    try:
+        # Get story
+        response = requests.get(f'{FLASK_API}/stories/{story_id}', timeout=5)
+        story = response.json() if response.status_code == 200 else None
+        
+        # Get all plays for this story
+        plays = Play.objects.filter(story_id=story_id)
+        
+        # Get unique endings
+        endings = {}
+        for play in plays:
+            ending_id = play.ending_page_id
+            if ending_id not in endings:
+                # Get ending details
+                try:
+                    resp = requests.get(f'{FLASK_API}/pages/{ending_id}', timeout=5)
+                    if resp.status_code == 200:
+                        page_data = resp.json()
+                        endings[ending_id] = {
+                            'label': page_data.get('ending_label', f'Ending #{ending_id}'),
+                            'count': 0,
+                            'players': []
+                        }
+                except:
+                    endings[ending_id] = {
+                        'label': f'Ending #{ending_id}',
+                        'count': 0,
+                        'players': []
+                    }
+            
+            endings[ending_id]['count'] += 1
+            if play.user:
+                endings[ending_id]['players'].append(play.user.username)
+        
+        return render(request, 'gameplay/player_path.html', {
+            'story': story,
+            'total_plays': plays.count(),
+            'endings': endings
+        })
+    except:
+        messages.error(request, 'Cannot load player paths')
+        return redirect('story_list')

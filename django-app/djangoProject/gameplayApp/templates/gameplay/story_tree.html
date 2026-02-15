@@ -1,0 +1,81 @@
+{% extends 'gameplay/base.html' %}
+
+{% block title %}Story Tree - {{ story.title }}{% endblock %}
+
+{% block content %}
+<h2>🌳 Story Structure: {{ story.title }}</h2>
+
+<div class="card" style="background: #e7f3ff;">
+    <p><strong>Visualization:</strong> Interactive graph showing all pages and choices</p>
+    <p>
+        <span style="background: #28a745; color: white; padding: 5px 10px; border-radius: 3px;">⭐ Start Page</span>
+        <span style="background: #dc3545; color: white; padding: 5px 10px; border-radius: 3px;">🏁 Ending</span>
+        <span style="background: #6c757d; color: white; padding: 5px 10px; border-radius: 3px;">📄 Normal Page</span>
+    </p>
+</div>
+
+<!-- Vis.js Network Graph -->
+<div class="card">
+    <div id="network" style="height: 600px; border: 1px solid #ddd;"></div>
+</div>
+
+<!-- Include Vis.js -->
+<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+<script>
+    // Prepare data
+    const nodes = new vis.DataSet([
+        {% for node in nodes %}
+        {
+            id: {{ node.id }},
+            label: "Page {{ node.id }}\n{{ node.text|truncatewords:8 }}",
+            color: {% if node.is_start %}'#28a745'{% elif node.is_ending %}'#dc3545'{% else %}'#667eea'{% endif %},
+            font: { color: 'white', size: 14 },
+            shape: {% if node.is_ending %}'box'{% else %}'ellipse'{% endif %},
+            title: "{% if node.is_ending %}{{ node.ending_label }}{% else %}Page {{ node.id }}{% endif %}"
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ]);
+
+    const edges = new vis.DataSet([
+        {% for edge in edges %}
+        {
+            from: {{ edge.from }},
+            to: {{ edge.to }},
+            label: "{{ edge.label }}",
+            arrows: 'to',
+            font: { size: 11, align: 'middle' }
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ]);
+
+    // Create network
+    const container = document.getElementById('network');
+    const data = { nodes: nodes, edges: edges };
+    const options = {
+        layout: {
+            hierarchical: {
+                direction: 'UD',
+                sortMethod: 'directed',
+                levelSeparation: 150,
+                nodeSpacing: 200
+            }
+        },
+        physics: {
+            enabled: false
+        },
+        edges: {
+            smooth: {
+                type: 'cubicBezier',
+                forceDirection: 'vertical'
+            }
+        }
+    };
+    
+    const network = new vis.Network(container, data, options);
+</script>
+
+<div style="text-align: center; margin-top: 20px;">
+    <a href="{% url 'story_detail' story.id %}" class="btn" style="background: #6c757d;">← Back to Story</a>
+    <a href="{% url 'edit_story' story.id %}" class="btn">✏️ Edit Structure</a>
+</div>
+{% endblock %}

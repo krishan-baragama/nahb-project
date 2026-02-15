@@ -124,3 +124,8 @@ FLASK_API_KEY = 'dev-api-key-12345'
 # Login settings
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'story_list'
+
+# Test database configuration
+DATABASES['default']['TEST'] = {
+    'NAME': BASE_DIR / 'test_db.sqlite3',  # Different file!
+}
