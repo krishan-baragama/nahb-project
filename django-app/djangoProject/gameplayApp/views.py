@@ -668,32 +668,54 @@ def player_path(request, story_id):
         response = requests.get(f'{FLASK_API}/stories/{story_id}', timeout=5)
         story = response.json() if response.status_code == 200 else None
         
+        if not story:
+            messages.error(request, 'Story not found')
+            return redirect('story_list')
+        
         # Get all plays for this story
         plays = Play.objects.filter(story_id=story_id)
+        
+        if not plays.exists():
+            # No plays yet - show empty state
+            return render(request, 'gameplay/player_path.html', {
+                'story': story,
+                'total_plays': 0,
+                'endings': {}
+            })
         
         # Get unique endings
         endings = {}
         for play in plays:
             ending_id = play.ending_page_id
             if ending_id not in endings:
-                # Get ending details
+                # Get ending details from Flask
                 try:
                     resp = requests.get(f'{FLASK_API}/pages/{ending_id}', timeout=5)
                     if resp.status_code == 200:
                         page_data = resp.json()
                         endings[ending_id] = {
-                            'label': page_data.get('ending_label', f'Ending #{ending_id}'),
+                            'label': page_data.get('ending_label') or f'Ending #{ending_id}',
                             'count': 0,
                             'players': []
                         }
-                except:
+                    else:
+                        endings[ending_id] = {
+                            'label': f'Ending #{ending_id}',
+                            'count': 0,
+                            'players': []
+                        }
+                except Exception as e:
+                    print(f"Error fetching page {ending_id}: {e}")
                     endings[ending_id] = {
                         'label': f'Ending #{ending_id}',
                         'count': 0,
                         'players': []
                     }
             
+            # Increment count
             endings[ending_id]['count'] += 1
+            
+            # Add player name if user exists
             if play.user:
                 endings[ending_id]['players'].append(play.user.username)
         
@@ -702,6 +724,8 @@ def player_path(request, story_id):
             'total_plays': plays.count(),
             'endings': endings
         })
-    except:
-        messages.error(request, 'Cannot load player paths')
+        
+    except Exception as e:
+        print(f"Error in player_path view: {e}")
+        messages.error(request, f'Cannot load player paths: {str(e)}')
         return redirect('story_list')
