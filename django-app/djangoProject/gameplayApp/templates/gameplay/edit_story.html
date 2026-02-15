@@ -65,7 +65,7 @@
     <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
         {% for page in pages %}
         <div class="card" style="background: {% if page.is_ending %}#d4edda{% else %}#f8f9fa{% endif %};">
-            <h4>Page #{{ page.id }} {% if page.id == story.start_page_id %}⭐{% endif %}</h4>
+            <h4>Page {{ forloop.counter }}{% if page.id == story.start_page_id %}⭐{% endif %}</h4>
             <p>{{ page.text|truncatewords:15 }}</p>
             
             {% if page.is_ending %}
@@ -74,7 +74,14 @@
                 <p><strong>Choices ({{ page.choices|length }}):</strong></p>
                 <ul style="font-size: 0.9em;">
                     {% for choice in page.choices %}
-                    <li>{{ choice.text|truncatewords:5 }} → #{{ choice.next_page_id }}</li>
+                    <li>
+                        {{ choice.text|truncatewords:5 }} → 
+                        {% for p in pages %}
+                            {% if p.id == choice.next_page_id %}
+                                Page {{ forloop.counter }}
+                            {% endif %}
+                        {% endfor %}
+                    </li>
                     {% empty %}
                     <li style="color: #dc3545;">No choices!</li>
                     {% endfor %}
@@ -86,7 +93,7 @@
                     <select name="next_page_id" required>
                         <option value="">-- Next page --</option>
                         {% for p in pages %}
-                        <option value="{{ p.id }}">Page #{{ p.id }}</option>
+                        <option value="{{ p.id }}">Page {{ forloop.counter }}{% if p.is_ending %} (Ending){% endif %}</option>
                         {% endfor %}
                     </select>
                     <button type="submit" class="btn" style="padding: 5px 10px;">Add Choice</button>
