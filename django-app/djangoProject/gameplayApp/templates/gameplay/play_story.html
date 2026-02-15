@@ -1,51 +1,67 @@
 {% extends 'gameplay/base.html' %}
+
 {% block title %}Play Story - NAHB{% endblock %}
+
 {% block content %}
 <div style="max-width: 800px; margin: 0 auto;">
     <h2>🎮 Playing Story</h2>
     
     {% if page %}
     <div class="card" style="background: #f8f9fa; padding: 30px;">
+        <!-- Level 20: Show illustration if available -->
+        {% if page.illustration %}
+        <div style="text-align: center; margin-bottom: 20px;">
+            <img src="{{ page.illustration }}" 
+                 alt="Story illustration" 
+                 style="max-width: 100%; max-height: 400px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.2);"
+                 onerror="this.style.display='none'">
+        </div>
+        {% endif %}
+        
+        <!-- Page Text -->
         <div style="font-size: 1.2em; line-height: 1.8; margin-bottom: 30px;">
             {{ page.text }}
         </div>
         
         {% if page.is_ending %}
+            <!-- ENDING SECTION -->
             <div style="background: #d4edda; padding: 20px; border-radius: 5px; margin-bottom: 20px;">
                 <h3 style="color: #155724;">🎉 {{ page.ending_label|default:"The End" }}</h3>
             </div>
             <a href="{% url 'story_list' %}" class="btn">📖 Back to Stories</a>
             <a href="{% url 'play_story' story_id %}?restart=true" class="btn">🔄 Play Again</a>
+            <a href="{% url 'story_detail' story_id %}" class="btn" style="background: #ffc107;">⭐ Rate This Story</a>
         {% else %}
+            <!-- CHOICES SECTION -->
             <h3>Choose your path:</h3>
             <div style="margin-top: 20px;">
                 {% if page.choices %}
                     {% for choice in page.choices %}
                     <a href="{% url 'get_page' choice.next_page_id %}" 
                        class="btn" 
-                       style="display: block; margin: 10px 0; text-align: left;">
+                       style="display: block; margin: 10px 0; text-align: left; padding: 15px;">
                         ➤ {{ choice.text }}
                     </a>
                     {% endfor %}
+                    
+                    <!-- Level 20: Dice Roll Feature -->
+                    {% if page.choices|length > 1 %}
+                    <div style="text-align: center; margin-top: 20px; padding: 20px; background: #fff3cd; border-radius: 5px;">
+                        <p><strong>🎲 Feeling Lucky?</strong></p>
+                        <form method="GET" action="{% url 'dice_roll' page.id %}">
+                            <button type="submit" class="btn" style="background: #ffc107; color: #000;">
+                                🎲 Let Fate Decide!
+                            </button>
+                        </form>
+                    </div>
+                    {% endif %}
+                    
                 {% else %}
                     <p style="color: #dc3545;">⚠️ No choices available!</p>
                     <a href="{% url 'story_list' %}" class="btn">← Back</a>
                 {% endif %}
             </div>
         {% endif %}
-        <!-- Level 20: Show illustration if available -->
-        {% if page.illustration %}
-        <div style="text-align: center; margin-bottom: 20px;">
-            <img src="{{ page.illustration }}" 
-                alt="Story illustration" 
-                style="max-width: 100%; max-height: 400px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.2);"
-                onerror="this.style.display='none'">
-        </div>
-        {% endif %}
-        
-        <div style="font-size: 1.2em; line-height: 1.8; margin-bottom: 30px;">
-            {{ page.text }}
-        </div>
     </div>
     {% else %}
     <p>Could not load page.</p>

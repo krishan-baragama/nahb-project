@@ -5,6 +5,19 @@
 {% block content %}
 <h2>🌳 Story Structure: {{ story.title }}</h2>
 
+<style>
+#network {
+    height: 600px; 
+    border: 1px solid #ddd;
+    overflow: hidden;  /* Prevent scroll zoom */
+}
+
+/* Prevent page scroll when mouse is over network */
+#network canvas {
+    outline: none;
+}
+</style>
+
 <div class="card" style="background: #e7f3ff;">
     <p><strong>Visualization:</strong> Interactive graph showing all pages and choices</p>
     <p>
@@ -12,6 +25,19 @@
         <span style="background: #dc3545; color: white; padding: 5px 10px; border-radius: 3px;">🏁 Ending</span>
         <span style="background: #6c757d; color: white; padding: 5px 10px; border-radius: 3px;">📄 Normal Page</span>
     </p>
+</div>
+
+<div class="card" style="background: #e7f3ff; margin-bottom: 10px;">
+    <p><strong>Controls:</strong></p>
+    <button onclick="network.fit()" class="btn" style="padding: 5px 15px; margin-right: 5px;">
+        🔍 Fit to Screen
+    </button>
+    <button onclick="network.moveTo({scale: network.getScale() * 1.2})" class="btn" style="padding: 5px 15px; margin-right: 5px;">
+        ➕ Zoom In
+    </button>
+    <button onclick="network.moveTo({scale: network.getScale() * 0.8})" class="btn" style="padding: 5px 15px;">
+        ➖ Zoom Out
+    </button>
 </div>
 
 <!-- Vis.js Network Graph -->
@@ -68,10 +94,29 @@
                 type: 'cubicBezier',
                 forceDirection: 'vertical'
             }
+        },
+        interaction: {
+            zoomView: false,           // DISABLE zoom with scroll
+            dragView: true,            // Still allow dragging
+            navigationButtons: true    // Add zoom buttons instead
         }
     };
     
     const network = new vis.Network(container, data, options);
+
+    // Zoom functions
+    function zoomIn() {
+        const scale = network.getScale();
+        network.moveTo({ scale: scale * 1.2 });
+    }
+    
+    function zoomOut() {
+        const scale = network.getScale();
+        network.moveTo({ scale: scale * 0.8 });
+    }
+    
+    // Fit to screen on load
+    setTimeout(() => network.fit(), 100);
 </script>
 
 <div style="text-align: center; margin-top: 20px;">

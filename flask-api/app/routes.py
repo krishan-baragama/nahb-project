@@ -165,3 +165,26 @@ def init_routes(app):
     def internal_error(error):
         db.session.rollback()
         return jsonify({'error': 'Internal server error'}), 500
+    
+    @app.route('/pages/<int:page_id>/random-choice', methods=['GET'])
+    def get_random_choice(page_id):
+        """Get a random choice from a page (dice roll feature)"""
+        import random
+        
+        page = Page.query.get_or_404(page_id)
+        
+        if not page.choices:
+            return jsonify({'error': 'No choices available'}), 404
+        
+        if page.is_ending:
+            return jsonify({'error': 'Cannot roll dice on ending page'}), 400
+        
+        # Pick random choice
+        random_choice = random.choice(page.choices)
+        
+        return jsonify({
+            'rolled': True,
+            'choice': random_choice.to_dict(),
+            'total_choices': len(page.choices),
+            'dice_result': f"🎲 Rolled {random.randint(1, 6)}!"
+        })

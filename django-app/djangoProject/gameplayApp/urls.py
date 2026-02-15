@@ -33,4 +33,5 @@ urlpatterns = [
     # Level 20: Visualizations
     path('story/<int:story_id>/tree/', views.story_tree, name='story_tree'),
     path('story/<int:story_id>/paths/', views.player_path, name='player_path'),
+    path('page/<int:page_id>/dice/', views.dice_roll, name='dice_roll'),
 ]
