@@ -14,7 +14,17 @@
                 {{ story.status|upper }}
             </span>
         </p>
-        <p><strong>Start Page:</strong> {% if story.start_page_id %}#{{ story.start_page_id }}{% else %}Not set{% endif %}</p>
+        <p><strong>Start Page:</strong> 
+            {% if story.start_page_id %}
+                {% for p in pages %}
+                    {% if p.id == story.start_page_id %}
+                        Page {{ forloop.counter }}
+                    {% endif %}
+                {% endfor %}
+            {% else %}
+                Not set
+            {% endif %}
+        </p>
         
         <!-- Publish/Unpublish Button -->
         <form method="POST" style="margin-top: 15px;">

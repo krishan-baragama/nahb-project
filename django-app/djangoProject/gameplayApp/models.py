@@ -29,6 +29,7 @@ class PlaySession(models.Model):
     session_key = models.CharField(max_length=40, unique=True)
     story_id = models.IntegerField()
     current_page_id = models.IntegerField()
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
